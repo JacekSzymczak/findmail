@@ -1,0 +1,32 @@
+---
+description: 
+globs: *.py
+alwaysApply: false
+---
+## BACKEND
+
+### Guidelines for PYTHON
+
+#### DJANGO
+
+- Use class-based views instead of function-based views for more maintainable and reusable code components
+- Implement Django REST Framework for building APIs with serializers that enforce data validation
+- Use Django ORM query expressions and annotations for complex database queries involving {{data_models}}
+- Leverage Django signals sparingly and document their usage to avoid hidden side effects in the application flow
+- Implement custom model managers for encapsulating complex query logic rather than repeating queries across views
+- Use Django forms or serializers for all user input to ensure proper validation and prevent security vulnerabilities in {{user_input_fields}}
+
+
+
+## BACKEND
+
+### Guidelines for PYTHON
+
+#### FLASK
+
+- Use Flask Blueprints to organize routes and views by feature or domain for better code organization
+- Implement Flask-SQLAlchemy with proper session management to prevent connection leaks and memory issues
+- Use Flask-Marshmallow for serialization and request validation of {{data_types}}
+- Apply the application factory pattern to enable testing and multiple deployment configurations
+- Implement Flask-Limiter for rate limiting on public endpoints to prevent abuse of {{public_apis}}
+- Use Flask-Login or Flask-JWT-Extended for authentication with proper session timeout and refresh mechanisms
