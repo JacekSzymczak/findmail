@@ -70,15 +70,15 @@
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Hasło</label>
-                        <div class="input-group">
+                        <div class="input-group has-validation">
                             <input type="password" class="form-control" id="password" name="password" required
                                    minlength="8" style="border-radius: 8px 0 0 8px;">
                             <button class="btn btn-outline-secondary" type="button" id="togglePassword" style="border-radius: 0 8px 8px 0;">
                                 <i class="bi bi-eye"></i>
                             </button>
-                        </div>
-                        <div class="invalid-feedback">
-                            Hasło musi mieć co najmniej 8 znaków.
+                            <div class="invalid-feedback">
+                                Hasło musi mieć co najmniej 8 znaków.
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -173,6 +173,16 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             if (!this.checkValidity()) {
                 this.classList.add('was-validated');
+                const passwordInput = this.querySelector('#password');
+                if (passwordInput) {
+                    if (passwordInput.value.length < 8) {
+                        passwordInput.classList.add('is-invalid');
+                        passwordInput.classList.remove('is-valid');
+                    } else {
+                        passwordInput.classList.add('is-valid');
+                        passwordInput.classList.remove('is-invalid');
+                    }
+                }
                 return;
             }
             

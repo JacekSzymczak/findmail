@@ -3,6 +3,11 @@
 {% block title %}FindMail - {{ mailbox.name }}{% endblock %}
 
 {% block content %}
+<style>
+    .text-xs {
+        font-size: 0.55rem !important;
+    }
+</style>
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -120,9 +125,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 messagesList.innerHTML = data.messages.map(message => `
                     <tr data-message-id="${message.id}">
-                        <td class="text-nowrap">${formatDate(message.received_at)}</td>
-                        <td class="text-nowrap">${message.sender}</td>
-                        <td>${message.subject}</td>
+                        <td class="text-nowrap text-xs">${formatDate(message.received_at)}</td>
+                        <td class="text-nowrap text-xs">${message.sender}</td>
+                        <td class="text-xs">${message.subject}</td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-outline-primary view-message">
                                 <i class="bi bi-eye"></i>

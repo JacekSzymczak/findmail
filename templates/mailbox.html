@@ -3,22 +3,22 @@
 {% block title %}FindMail - Lista maili{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Lista maili</h5>
-            </div>
-            <div class="card-body">
+<div class="gradient-bg position-fixed top-0 start-0 w-100 h-100" style="z-index: -1;"></div>
+<div class="row justify-content-center align-items-start min-vh-100 pt-5">
+    <div class="col-md-8">
+        <div class="gradient-accent2 rounded-top-4 mb-0" style="height: 4px;"></div>
+        <div class="card mb-4 shadow-lg rounded-4 border-0" style="background-color: #f8f9fa; border-top-left-radius: 0 !important;">
+            <div class="card-header "><strong>Podaj nazwę skrzynki mailowej do wyszukania</strong></div>
+            <div class="card-body p-4 mt-4">
+                <div class="mt-2"></div>
                 <form id="mailboxForm" method="GET">
                     <div class="mb-3">
-                        <label for="mailbox_name" class="form-label">Nazwa skrzynki</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="mailbox_name" name="name" 
+                        <div class="input-group input-group">
+                            <input type="text" class="form-control form-control-lg rounded-start-3" id="mailbox_name" name="name" 
                                    pattern="[A-Za-z0-9._%+\-]{1,20}" maxlength="20" required
-                                   placeholder="wprowadź nazwę skrzynki"
+                                  
                                    aria-describedby="mailboxHelp">
-                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-end-3" id="submitBtn">
                                 <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                                 Pokaż maile
                             </button>
@@ -26,44 +26,49 @@
                         <div class="invalid-feedback" id="mailboxError"></div>
                     </div>
                 </form>
-            </div>
-        </div>
-
-        <!-- Sekcja z listą maili -->
-        <div id="messagesSection" class="d-none">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-1">Lista maili w skrzynce: <span id="mailboxName"></span>@findmail.pl</h5>
-                    <button class="btn btn-outline-secondary btn-sm" id="refreshBtn">
-                        <i class="bi bi-arrow-clockwise"></i> Odśwież
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Od</th>
-                                    <th>Tytuł</th>
-                                </tr>
-                            </thead>
-                            <tbody id="messagesList">
-                                <!-- Maile będą dodawane tutaj dynamicznie -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="noMessages" class="text-center py-4 d-none">
-                        <p class="text-muted mb-0">Brak maili w tej skrzynce</p>
-                    </div>
-                    <div id="loadingMessages" class="text-center py-4 d-none">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Ładowanie...</span>
+                <div id="messagesSection" class="d-none">
+                    
+                    <div class="card shadow rounded-4 border-0">
+                        <div class="card-header bg-white fw-semibold rounded-top-4 border-bottom-0" style="background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="text-secondary" style="font-size: 0.95rem;">Lista maili w skrzynce: <span id="mailboxName" class="text-dark"></span></strong>
+                                <button class="btn btn-link btn-sm p-0" id="refreshBtn" style="color: #6c757d;">
+                                    <i class="bi bi-arrow-clockwise fs-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body pb-3 pt-2">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 rounded-3 overflow-hidden shadow-sm table-smaller">
+                                    <thead class="table-header-strong">
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Od</th>
+                                            <th>Tytuł</th>
+                                            <th>Akcje</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="messagesList">
+                                        <!-- Maile będą dodawane tutaj dynamicznie -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="noMessages" class="text-center py-4 d-none">
+                                <p class="text-muted mb-0">Brak maili w tej skrzynce</p>
+                            </div>
+                            <div id="loadingMessages" class="text-center py-4 d-none">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Ładowanie...</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Sekcja z listą maili -->
+        
     </div>
 </div>
 
@@ -71,9 +76,9 @@
 <div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="emailModalLabel">Szczegóły maila</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-primary text-white py-2">
+                <h6 class="modal-title" id="emailModalLabel">Szczegóły maila</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
@@ -115,6 +120,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentMailbox = '';
 
+    // Autofocus the input on page load
+    nameInput.focus();
+
     // Validate mailbox name format
     nameInput.addEventListener('input', function() {
         const pattern = new RegExp(this.pattern);
@@ -151,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 displayMessages(data.data.messages);
-                mailboxNameSpan.textContent = mailboxName;
+                mailboxNameSpan.textContent = mailboxName + '@findmail.pl';
                 messagesSection.classList.remove('d-none');
             } else {
                 showError(data.error.message);
@@ -190,9 +198,47 @@ document.addEventListener('DOMContentLoaded', function() {
             <td>${date}</td>
             <td>${message.sender}</td>
             <td>${message.subject || '(Brak tematu)'}</td>
+            <td>
+                <button class="btn  btn-sm delete-btn" data-message-id="${message.id}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
         `;
         
-        tr.addEventListener('click', () => showEmailDetails(message));
+        tr.addEventListener('click', (e) => {
+            // Don't show email details if delete button was clicked
+            if (!e.target.closest('.delete-btn')) {
+                showEmailDetails(message);
+            }
+        });
+
+        // Add delete button click handler
+        const deleteBtn = tr.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation(); // Prevent row click event
+            if (confirm('Czy na pewno chcesz usunąć ten mail?')) {
+                try {
+                    const response = await fetch(`/api/mailboxes/${currentMailbox}/messages/${message.id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        // Remove the row from the table
+                        tr.remove();
+                        // If no messages left, show "no messages" message
+                        if (messagesList.children.length === 0) {
+                            noMessages.classList.remove('d-none');
+                        }
+                    } else {
+                        const data = await response.json();
+                        alert('Błąd podczas usuwania maila: ' + (data.error?.message || 'Nieznany błąd'));
+                    }
+                } catch (error) {
+                    alert('Błąd podczas usuwania maila');
+                }
+            }
+        });
+
         return tr;
     }
 
@@ -226,4 +272,93 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+<style>
+    body {
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 100%);
+        min-height: 100vh;
+    }
+    .gradient-bg {
+        background: radial-gradient(circle at 20% 10%, #e0e7ff 0%, #f8fafc 80%);
+        opacity: 0.7;
+    }
+    .gradient-accent {
+        background: linear-gradient(90deg, #6366f1 0%, #a5b4fc 100%);
+    }
+    .gradient-accent2 {
+        background: linear-gradient(90deg, #be0dc4 0%, #a5b4fc 100%);
+    }
+    .card {
+        border-radius: 1.5rem !important;
+    }
+    .table {
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.04);
+    }
+    .table thead th {
+        border-top: none;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    .table tbody tr {
+        transition: box-shadow 0.2s, background 0.2s;
+    }
+    .table tbody tr:hover {
+        background-color:rgb(227, 227, 227);
+        box-shadow: 0 2px 12px 0 rgba(99, 102, 241, 0.10);
+        z-index: 2;
+        position: relative;
+    }
+    .input-group-lg > .form-control,
+    .input-group-lg > .btn {
+        font-size: 1.25rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+    .card-header {
+        border-bottom: none;
+    }
+    /* Completely neutralize input hover/focus effect for the main input */
+    .input-group-lg .form-control.form-control-lg,
+    .input-group-lg .form-control.form-control-lg:focus,
+    .input-group-lg .form-control.form-control-lg:hover {
+        border-width: 2px !important;
+        border-color: #ced4da !important;
+        box-shadow: none !important;
+        outline: none !important;
+        background-clip: padding-box;
+        background-color: #fff !important;
+        color: #222 !important;
+        font-size: 1.5rem;
+        transition: none !important;
+        caret-color: #222;
+    }
+    /* Much smaller font for message list */
+    .table-smaller {
+        font-size: 0.85rem !important;
+    }
+    /* Strong, colorful table header */
+    .table-header-strong th {
+        background: linear-gradient(30deg, rgba(139, 9, 107, 0.85) 0%, rgba(167, 106, 176, 0.85) 90%);
+        color: #fff !important;
+        border-top: none;
+        border-bottom: 1px solid #3a3a6a;
+        font-weight: 600;
+        font-size: 0.8rem;
+        letter-spacing: 0;
+        border-radius: 0 !important;
+    }
+    
+
+    .card,
+.card:hover,
+.input-group-lg .form-control,
+.input-group-lg .form-control:hover,
+.input-group-lg .form-control:focus {
+  transition: none !important;
+  transform: none !important;
+
+}
+</style>
 {% endblock %} 
