@@ -13,7 +13,8 @@ class InvitationKeyService:
         if not current_user.is_authenticated or not current_user.is_admin:
             raise ValueError("Brak uprawnień administratora")
 
-        key = secrets.token_urlsafe(32)
+        # Generate a shorter key that fits within the 64-character limit
+        key = secrets.token_urlsafe(32)[:32]  # This will give us a ~43 character string
         invitation_key = InvitationKey(key=key)
         db.session.add(invitation_key)
         db.session.commit()

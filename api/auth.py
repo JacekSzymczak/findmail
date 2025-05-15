@@ -48,7 +48,7 @@ def register():
         current_app.logger.error(f"Error during registration: {e}")
         return jsonify(error={"code": "500", "message": "Internal Server Error"}), 500
     # Assume user has id and email attributes
-    return jsonify(data={"id": user.id, "email": user.email}, meta={}), 201
+    return jsonify(data={"id": user.id, "email": user.email}), 201
 
 
 @auth_bp.route("/login", methods=["POST"])
@@ -69,7 +69,7 @@ def login():
     except Exception as e:
         current_app.logger.error(f"Error during login: {e}")
         return jsonify(error={"code": "500", "message": "Internal Server Error"}), 500
-    return jsonify(data={"id": user.id, "email": user.email}, meta={}), 200
+    return jsonify(data={"id": user.id, "email": user.email}), 200
 
 
 @auth_bp.route("/logout", methods=["POST"])

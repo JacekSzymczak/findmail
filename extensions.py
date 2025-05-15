@@ -3,7 +3,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect
 
 limiter = Limiter(key_func=get_remote_address)
 login_manager = LoginManager()
@@ -24,3 +24,9 @@ def init_extensions(app: Flask) -> None:
         "Proszę się zalogować, aby uzyskać dostęp do tej strony."
     )
     login_manager.login_message_category = "info"
+
+
+def exempt_blueprints(app: Flask) -> None:
+    """Exempt blueprints from CSRF protection after they are registered."""
+    if "messages" in app.blueprints:
+        csrf.exempt(app.blueprints["messages"])

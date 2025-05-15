@@ -7,7 +7,12 @@ from api.auth import auth_bp
 from api.invitation_keys import invitation_keys_bp
 from api.mailboxes import mailboxes_bp
 from api.messages import messages_bp
-from extensions import csrf, db, limiter, login_manager
+from extensions import (
+    exempt_blueprints,
+    init_extensions,
+    login_manager,
+)
+from services.auth_service import AuthService
 
 
 def create_app(database_uri=None):
@@ -17,8 +22,8 @@ def create_app(database_uri=None):
     env_path = os.path.join(os.path.dirname(__file__), ".env")
     env_config = dotenv_values(env_path)
 
-    # Set secret key for session management
-    app.config["SECRET_KEY"] = env_config.get("SECRET_KEY", os.urandom(24))
+    # Set secret key from environment or generate a secure one
+    app.secret_key = env_config.get("SECRET_KEY") or os.urandom(24)
 
     # Securely load database configuration from .env file
     db_config = {
@@ -47,6 +52,15 @@ def create_app(database_uri=None):
 
     app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # Load IMAP configuration
+    app.config["IMAP_HOST"] = env_config.get("IMAP_HOST")
+    app.config["IMAP_PORT"] = int(env_config.get("IMAP_PORT", "993"))
+    app.config["IMAP_USER"] = env_config.get("IMAP_USER")
+    app.config["IMAP_PASSWORD"] = env_config.get("IMAP_PASSWORD")
+    app.config["IMAP_USE_SSL"] = (
+        env_config.get("IMAP_USE_SSL", "true").lower() == "true"
+    )
 
     # Configure logging
     import logging
@@ -81,12 +95,7 @@ def create_app(database_uri=None):
         raise
 
     # Initialize extensions
-    limiter.init_app(app)
-    login_manager.init_app(app)
-    csrf.init_app(app)
-    db.init_app(app)
-    # Redirect unauthorized users to login
-    login_manager.login_view = "auth.login"
+    init_extensions(app)
 
     # Register API blueprints
     app.register_blueprint(invitation_keys_bp)
@@ -94,11 +103,12 @@ def create_app(database_uri=None):
     app.register_blueprint(mailboxes_bp)
     app.register_blueprint(messages_bp)
 
+    # Exempt blueprints from CSRF protection after registration
+    exempt_blueprints(app)
+
     # User loader for Flask-Login
     @login_manager.user_loader
     def load_user(user_id):
-        from services.auth_service import AuthService
-
         return AuthService.get_user_by_id(int(user_id))
 
     # Centralized error handler
@@ -113,6 +123,5 @@ def create_app(database_uri=None):
 # Create application instance for Flask CLI
 app = create_app()
 
-# Dodaję blok uruchamiający aplikację
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
