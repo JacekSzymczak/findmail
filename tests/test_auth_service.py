@@ -1,5 +1,3 @@
-from datetime import UTC, datetime
-
 import pytest
 from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
@@ -86,12 +84,12 @@ def test_register_with_used_invitation_key(app, db):
     with app.app_context():
         inv_key = create_invitation_key(db, "used-key")
         user1 = create_user(db, "test@example.com", "password123", None, is_admin=False)
-        # Mark the invitation key as used
-        inv_key.used_at = datetime.now(UTC)
+        # Delete the invitation key as it was used
+        db.session.delete(inv_key)
         db.session.commit()
         from services.auth_service import AuthService
 
-        with pytest.raises(ValueError, match="Klucz zaproszenia został już użyty"):
+        with pytest.raises(ValueError, match="Nieprawidłowy klucz zaproszenia"):
             AuthService.register("test2@example.com", "password123", "used-key")
 
 

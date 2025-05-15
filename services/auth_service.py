@@ -1,5 +1,3 @@
-from datetime import UTC, datetime
-
 from flask_login import login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -22,8 +20,8 @@ class AuthService:
         )
         db.session.add(user)
 
-        # Mark invitation key as used
-        invitation.used_at = datetime.now(UTC)
+        # Delete the used invitation key
+        db.session.delete(invitation)
 
         db.session.commit()
 

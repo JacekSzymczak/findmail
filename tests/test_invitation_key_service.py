@@ -33,7 +33,8 @@ def test_create_list_delete_invitation_key(app, db, subtests):
         with subtests.test("Tworzenie nowego klucza"):
             invitation = InvitationKeyService.create_invitation_key()
             key = invitation.key
-            assert key in InvitationKeyService.list_unused()
+            keys = InvitationKeyService.list_invitation_keys()
+            assert any(k.key == key for k in keys)
 
         with subtests.test("Usuwanie klucza"):
             deleted = InvitationKeyService.delete_invitation_key(key)
@@ -55,7 +56,8 @@ def test_create_invitation_key_as_admin(app, db):
 
         # Create invitation key
         new_invitation = InvitationKeyService.create_invitation_key()
-        assert new_invitation.key in InvitationKeyService.list_unused()
+        keys = InvitationKeyService.list_invitation_keys()
+        assert any(k.key == new_invitation.key for k in keys)
 
 
 def test_create_invitation_key_as_non_admin(app, db):
@@ -88,8 +90,8 @@ def test_list_invitation_keys_as_admin(app, db):
         key = invitation.key
 
         # List invitation keys
-        keys = InvitationKeyService.list_unused()
-        assert key in keys
+        keys = InvitationKeyService.list_invitation_keys()
+        assert any(k.key == key for k in keys)
 
 
 def test_list_invitation_keys_as_non_admin(app, db):
@@ -106,7 +108,7 @@ def test_list_invitation_keys_as_non_admin(app, db):
 
         # Try to list invitation keys
         with pytest.raises(ValueError) as exc_info:
-            InvitationKeyService.list_unused()
+            InvitationKeyService.list_invitation_keys()
         assert str(exc_info.value) == "Brak uprawnień administratora"
 
 

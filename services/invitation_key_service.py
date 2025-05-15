@@ -55,17 +55,8 @@ class InvitationKeyService:
         invitation_key = InvitationKeyService.get_invitation_key(key)
         if not invitation_key:
             raise ValueError("Nieprawidłowy klucz zaproszenia")
-        if invitation_key.used_at is not None:
-            raise ValueError("Klucz zaproszenia został już użyty")
-        return invitation_key
 
-    @staticmethod
-    def list_unused():
-        """List all unused invitation keys."""
-        if not current_user.is_authenticated or not current_user.is_admin:
-            raise ValueError("Brak uprawnień administratora")
-        keys = InvitationKey.query.all()
-        return [inv.key for inv in keys]
+        return invitation_key
 
     @staticmethod
     def delete(key):

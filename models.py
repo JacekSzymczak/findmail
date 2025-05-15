@@ -3,7 +3,7 @@ from functools import wraps
 
 from flask import abort
 from flask_login import UserMixin
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String
 
 from extensions import db
 
@@ -12,7 +12,6 @@ class InvitationKey(db.Model):
     __tablename__ = "invitation_keys"
     id = Column(Integer, primary_key=True)
     key = Column(String(64), unique=True, nullable=False)
-    used_at = Column(DateTime, nullable=True)
 
 
 class User(UserMixin, db.Model):
