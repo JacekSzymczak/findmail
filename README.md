@@ -99,7 +99,7 @@ export FLASK_ENV=development
 flask run
 ```
 
-Access the UI at `http://localhost:5000` (Chrome only).
+Access the UI at `http://localhost:8080` (Chrome only).
 
 ---
 

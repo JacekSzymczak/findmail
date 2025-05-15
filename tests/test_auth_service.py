@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import pytest
 from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
@@ -18,7 +20,6 @@ def create_user(db, email, password, invitation_key, is_admin=False):
         email=email,
         password=generate_password_hash(password),
         is_admin=is_admin,
-        invitation_key=invitation_key,
     )
     db.session.add(user)
     db.session.commit()
@@ -38,12 +39,8 @@ def test_register_login_logout(app, db, subtests):
         # Dodaj klucz zaproszenia i użytkowników bezpośrednio
         admin_inv_key = create_invitation_key(db, "admin-key")
         user_inv_key = create_invitation_key(db, "user-key")
-        admin = create_user(
-            db, "admin@example.com", "password123", admin_inv_key, is_admin=True
-        )
-        user = create_user(
-            db, "user1@example.com", "password", user_inv_key, is_admin=False
-        )
+        admin = create_user(db, "admin@example.com", "password123", None, is_admin=True)
+        user = create_user(db, "user1@example.com", "password", None, is_admin=False)
         assert admin.is_admin is True
         assert user.is_admin is False
 
@@ -66,13 +63,11 @@ def test_register_first_user_as_admin(app, db):
     """Test that the first registered user becomes an admin."""
     with app.app_context():
         inv_key1 = create_invitation_key(db, "key1")
-        user1 = create_user(
-            db, "test@example.com", "password123", inv_key1, is_admin=True
-        )
+        user1 = create_user(db, "test@example.com", "password123", None, is_admin=True)
         assert user1.is_admin is True
         inv_key2 = create_invitation_key(db, "key2")
         user2 = create_user(
-            db, "test2@example.com", "password123", inv_key2, is_admin=False
+            db, "test2@example.com", "password123", None, is_admin=False
         )
         assert user2.is_admin is False
 
@@ -90,9 +85,10 @@ def test_register_with_used_invitation_key(app, db):
     """Test registration with already used invitation key."""
     with app.app_context():
         inv_key = create_invitation_key(db, "used-key")
-        user1 = create_user(
-            db, "test@example.com", "password123", inv_key, is_admin=False
-        )
+        user1 = create_user(db, "test@example.com", "password123", None, is_admin=False)
+        # Mark the invitation key as used
+        inv_key.used_at = datetime.now(UTC)
+        db.session.commit()
         from services.auth_service import AuthService
 
         with pytest.raises(ValueError, match="Klucz zaproszenia został już użyty"):
@@ -103,9 +99,7 @@ def test_register_with_existing_email(app, db):
     """Test registration with existing email."""
     with app.app_context():
         inv_key1 = create_invitation_key(db, "key3")
-        user1 = create_user(
-            db, "test@example.com", "password123", inv_key1, is_admin=False
-        )
+        user1 = create_user(db, "test@example.com", "password123", None, is_admin=False)
         inv_key2 = create_invitation_key(db, "key4")
         from services.auth_service import AuthService
 
@@ -117,9 +111,7 @@ def test_login_with_valid_credentials(app, db):
     """Test login with valid credentials."""
     with app.app_context():
         inv_key = create_invitation_key(db, "login-key")
-        user = create_user(
-            db, "test@example.com", "password123", inv_key, is_admin=False
-        )
+        user = create_user(db, "test@example.com", "password123", None, is_admin=False)
         from services.auth_service import AuthService
 
         logged_user = AuthService.login("test@example.com", "password123")
@@ -130,9 +122,7 @@ def test_login_with_invalid_credentials(app, db):
     """Test login with invalid credentials."""
     with app.app_context():
         inv_key = create_invitation_key(db, "login-bad-key")
-        user = create_user(
-            db, "test@example.com", "password123", inv_key, is_admin=False
-        )
+        user = create_user(db, "test@example.com", "password123", None, is_admin=False)
         from services.auth_service import AuthService
 
         with pytest.raises(ValueError, match="Nieprawidłowy email lub hasło"):
@@ -145,9 +135,7 @@ def test_logout(app, db):
     """Test logout functionality."""
     with app.app_context():
         inv_key = create_invitation_key(db, "logout-key")
-        user = create_user(
-            db, "test@example.com", "password123", inv_key, is_admin=False
-        )
+        user = create_user(db, "test@example.com", "password123", None, is_admin=False)
         from services.auth_service import AuthService
 
         AuthService.login("test@example.com", "password123")
@@ -167,11 +155,9 @@ def test_non_admin_cannot_access_admin_endpoints(app, db, subtests):
         admin_inv_key = create_invitation_key(db, "admin-key2")
         user_inv_key = create_invitation_key(db, "user-key2")
         admin = create_user(
-            db, "admin2@example.com", "password123", admin_inv_key, is_admin=True
+            db, "admin2@example.com", "password123", None, is_admin=True
         )
-        user = create_user(
-            db, "user2@example.com", "password123", user_inv_key, is_admin=False
-        )
+        user = create_user(db, "user2@example.com", "password123", None, is_admin=False)
         from services.auth_service import AuthService
 
         AuthService.login("user2@example.com", "password123")

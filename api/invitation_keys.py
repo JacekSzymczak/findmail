@@ -23,6 +23,8 @@ def create_invitation_key():
         return jsonify(error={"code": "415", "message": "Unsupported Media Type"}), 415
 
     try:
+        # Log the incoming JSON data for debugging
+        current_app.logger.debug(f"Received invitation key data: {request.get_json()}")
         data = InvitationKeySchema().load(request.get_json())
     except ValidationError as err:
         return jsonify(error={"code": "400", "message": err.messages}), 400

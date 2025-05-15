@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from flask_login import login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -17,9 +19,12 @@ class AuthService:
         user = User(
             email=email,
             password=generate_password_hash(password),
-            invitation_key=invitation,
         )
         db.session.add(user)
+
+        # Mark invitation key as used
+        invitation.used_at = datetime.now(UTC)
+
         db.session.commit()
 
         return user

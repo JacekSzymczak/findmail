@@ -14,7 +14,8 @@ create table invitation_keys (
 create table users (
   id int unsigned not null auto_increment primary key,
   email varchar(254) not null unique,
-  password varchar(20) not null,
+  password varchar(255) not null,
+  is_admin boolean not null default false,
   created_at timestamp not null default current_timestamp
 ) engine=innodb
   default charset=utf8mb4

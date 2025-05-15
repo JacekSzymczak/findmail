@@ -3,7 +3,7 @@ from flask_login import login_required
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 
-from extensions import csrf, limiter
+from extensions import csrf, db, limiter
 from schemas.auth_schema import LoginSchema, RegisterSchema
 from services.auth_service import AuthService
 
@@ -28,13 +28,13 @@ def register():
         is_first_user = User.query.count() == 0
 
         user = AuthService.register(
-            data["email"], data["password"], data["invitation_key"]
+            data["email"], data["password"], data["invitationKey"]
         )
 
         # Make first user an admin
         if is_first_user:
             user.is_admin = True
-            current_app.db.session.commit()
+            db.session.commit()
             current_app.logger.info(
                 f"Pierwszy użytkownik {user.email} został administratorem"
             )

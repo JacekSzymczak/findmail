@@ -34,14 +34,17 @@ class InvitationKeyService:
 
     @staticmethod
     def delete_invitation_key(key):
-        """Delete an invitation key."""
+        """Delete an invitation key (admin only)."""
         if not current_user.is_authenticated or not current_user.is_admin:
             raise ValueError("Brak uprawnień administratora")
+        return InvitationKeyService._delete_invitation_key_noauth(key)
 
+    @staticmethod
+    def _delete_invitation_key_noauth(key):
+        """Delete an invitation key without checking admin rights (for registration logic)."""
         invitation_key = InvitationKeyService.get_invitation_key(key)
         if not invitation_key:
             return False
-
         db.session.delete(invitation_key)
         db.session.commit()
         return True
@@ -52,7 +55,7 @@ class InvitationKeyService:
         invitation_key = InvitationKeyService.get_invitation_key(key)
         if not invitation_key:
             raise ValueError("Nieprawidłowy klucz zaproszenia")
-        if invitation_key.used_by:
+        if invitation_key.used_at is not None:
             raise ValueError("Klucz zaproszenia został już użyty")
         return invitation_key
 
@@ -66,10 +69,5 @@ class InvitationKeyService:
 
     @staticmethod
     def delete(key):
-        """Delete a specific invitation key."""
-        inv = InvitationKey.query.filter_by(key=key).first()
-        if not inv:
-            return False
-        db.session.delete(inv)
-        db.session.commit()
-        return True
+        """Delete a specific invitation key (admin only)."""
+        return InvitationKeyService.delete_invitation_key(key)
