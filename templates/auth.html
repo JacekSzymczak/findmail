@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}FindMail - {% if active_tab == 'login' %}Logowanie{% else %}Rejestracja{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-lg" style="border: 1px solid rgb(108, 5, 160); border-radius: 15px; overflow: hidden;">
+            <div class="card-header" style="background: linear-gradient(135deg, rgb(108, 5, 160) 0%, rgb(158, 55, 200) 100%); color: white; padding: 0.7rem;">
+                <h3 class="mb-0">
+                    <i class="bi {% if active_tab == 'login' %}bi-box-arrow-in-right{% else %}bi-person-plus{% endif %} me-2"></i>
+                    {% if active_tab == 'login' %}Logowanie{% else %}Rejestracja{% endif %}
+                </h3>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 10px;">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {% if error is mapping %}
+                        {% if error.message %}
+                            {{ error.message }}
+                        {% else %}
+                            Wystąpił błąd. Spróbuj ponownie.
+                        {% endif %}
+                    {% else %}
+                        {{ error }}
+                    {% endif %}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+                
+                {% if active_tab == 'login' %}
+                <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Adres email</label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               aria-describedby="emailHelp" style="border-radius: 8px;">
+                        <div class="invalid-feedback">
+                            Proszę podać prawidłowy adres email.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Hasło</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="password" name="password" required
+                                   style="border-radius: 8px 0 0 8px;">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword" style="border-radius: 0 8px 8px 0;">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback">
+                            Proszę podać hasło.
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg px-5">Zaloguj się</button>
+                    </div>
+                </form>
+                {% else %}
+                <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Adres email</label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               aria-describedby="emailHelp" style="border-radius: 8px;">
+                        <div class="invalid-feedback">
+                            Proszę podać prawidłowy adres email.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Hasło</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="password" name="password" required
+                                   minlength="8" style="border-radius: 8px 0 0 8px;">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword" style="border-radius: 0 8px 8px 0;">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback">
+                            Hasło musi mieć co najmniej 8 znaków.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="invitation_key" class="form-label">Klucz zaproszenia</label>
+                        <input type="text" class="form-control" id="invitation_key" name="invitation_key" required
+                               minlength="1" maxlength="32" style="border-radius: 8px;">
+                        <div class="invalid-feedback">
+                            Proszę podać klucz zaproszenia.
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg px-5">Zarejestruj się</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Walidacja formularzy
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
+    
+    if (togglePassword && password) {
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('bi-eye');
+            this.querySelector('i').classList.toggle('bi-eye-slash');
+        });
+    }
+
+    // Obsługa formularzy
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!this.checkValidity()) {
+                this.classList.add('was-validated');
+                return;
+            }
+            
+            const formData = new FormData(this);
+            const data = {
+                email: formData.get('email'),
+                password: formData.get('password')
+            };
+
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': formData.get('csrf_token')
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error.message || 'Niepoprawny login lub hasło');
+                } else {
+                    window.location.href = "{{ url_for('views_bp.mailbox') }}";
+                }
+            })
+            .catch(error => {
+                showError('Wystąpił błąd podczas logowania. Spróbuj ponownie później.');
+            });
+        });
+    }
+
+    if (registerForm) {
+        registerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!this.checkValidity()) {
+                this.classList.add('was-validated');
+                return;
+            }
+            
+            const formData = new FormData(this);
+            const data = {
+                email: formData.get('email'),
+                password: formData.get('password'),
+                invitationKey: formData.get('invitation_key')
+            };
+
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': formData.get('csrf_token')
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error.message || 'Wystąpił błąd podczas rejestracji');
+                } else {
+                    window.location.href = "{{ url_for('main_bp.index') }}";
+                }
+            })
+            .catch(error => {
+                showError('Wystąpił błąd podczas rejestracji. Spróbuj ponownie później.');
+            });
+        });
+    }
+
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+        errorDiv.role = 'alert';
+        errorDiv.style.borderRadius = '10px';
+        errorDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        const existingError = document.querySelector('.alert-danger');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        const cardBody = document.querySelector('.card-body');
+        cardBody.insertBefore(errorDiv, cardBody.firstChild);
+    }
+});
+</script>
+{% endblock %} 

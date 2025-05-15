@@ -19,7 +19,7 @@ def init_extensions(app: Flask) -> None:
     db.init_app(app)
 
     # Configure login manager
-    login_manager.login_view = "auth.login"
+    login_manager.login_view = "views_bp.login"
     login_manager.login_message = (
         "Proszę się zalogować, aby uzyskać dostęp do tej strony."
     )

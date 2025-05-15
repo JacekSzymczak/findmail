@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}FindMail - Strona nie znaleziona{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 mb-4">404</h1>
+            <p class="lead mb-4">Przepraszamy, ale strona której szukasz nie istnieje.</p>
+            <a href="{{ url_for('main_bp.index') }}" class="btn btn-primary">
+                <i class="bi bi-house"></i> Wróć do strony głównej
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

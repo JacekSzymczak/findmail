@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}FindMail - {{ mailbox.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Wiadomości</h5>
+                <div class="d-flex align-items-center">
+                    <span class="text-muted me-3" id="lastRefresh"></span>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="refreshBtn">
+                        <i class="bi bi-arrow-clockwise"></i> Odśwież
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-nowrap">Data</th>
+                                <th scope="col" class="text-nowrap">Nadawca</th>
+                                <th scope="col">Temat</th>
+                                <th scope="col" class="text-end">Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesList">
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Ładowanie...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Message Preview Modal -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageSubject"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>Od:</strong> <span id="messageFrom"></span><br>
+                    <strong>Data:</strong> <span id="messageDate"></span>
+                </div>
+                <div class="border rounded p-3">
+                    <iframe id="messageContent" sandbox="allow-same-origin" class="w-100" style="height: 400px;"></iframe>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="deleteBtn">Usuń</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Potwierdź usunięcie</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Czy na pewno chcesz usunąć tę wiadomość?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Usuń</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesList = document.getElementById('messagesList');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const lastRefresh = document.getElementById('lastRefresh');
+    const messageModal = new bootstrap.Modal(document.getElementById('messageModal'));
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    let currentMessageId = null;
+    let pollInterval = null;
+
+    // Format date
+    function formatDate(date) {
+        return new Date(date).toLocaleString('pl-PL', {
+            dateStyle: 'short',
+            timeStyle: 'short'
+        });
+    }
+
+    // Update last refresh time
+    function updateLastRefresh() {
+        lastRefresh.textContent = `Ostatnie odświeżenie: ${formatDate(new Date())}`;
+    }
+
+    // Load messages
+    async function loadMessages() {
+        try {
+            const response = await fetch('{{ url_for("main.get_messages", name=mailbox.name) }}');
+            const data = await response.json();
+            
+            if (response.ok) {
+                messagesList.innerHTML = data.messages.map(message => `
+                    <tr data-message-id="${message.id}">
+                        <td class="text-nowrap">${formatDate(message.received_at)}</td>
+                        <td class="text-nowrap">${message.sender}</td>
+                        <td>${message.subject}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary view-message">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-message">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="4" class="text-center">Brak wiadomości</td></tr>';
+                
+                updateLastRefresh();
+            } else {
+                showError(data.error.message);
+            }
+        } catch (error) {
+            showError('Błąd podczas ładowania wiadomości');
+        }
+    }
+
+    // View message
+    async function viewMessage(id) {
+        try {
+            const response = await fetch(`{{ url_for("main.get_message", name=mailbox.name) }}/${id}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('messageSubject').textContent = data.subject;
+                document.getElementById('messageFrom').textContent = data.sender;
+                document.getElementById('messageDate').textContent = formatDate(data.received_at);
+                
+                const iframe = document.getElementById('messageContent');
+                iframe.srcdoc = data.content;
+                
+                currentMessageId = id;
+                messageModal.show();
+            } else {
+                showError(data.error.message);
+            }
+        } catch (error) {
+            showError('Błąd podczas ładowania wiadomości');
+        }
+    }
+
+    // Delete message
+    async function deleteMessage(id) {
+        try {
+            const response = await fetch(`{{ url_for("main.delete_message", name=mailbox.name) }}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-Token': '{{ csrf_token() }}'
+                }
+            });
+            
+            if (response.ok) {
+                loadMessages();
+                messageModal.hide();
+            } else {
+                const data = await response.json();
+                showError(data.error.message);
+            }
+        } catch (error) {
+            showError('Błąd podczas usuwania wiadomości');
+        }
+    }
+
+    // Event listeners
+    messagesList.addEventListener('click', function(e) {
+        const messageRow = e.target.closest('tr');
+        if (!messageRow) return;
+        
+        const messageId = messageRow.dataset.messageId;
+        if (e.target.closest('.view-message')) {
+            viewMessage(messageId);
+        } else if (e.target.closest('.delete-message')) {
+            currentMessageId = messageId;
+            deleteModal.show();
+        }
+    });
+
+    refreshBtn.addEventListener('click', loadMessages);
+
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        if (currentMessageId) {
+            deleteMessage(currentMessageId);
+            deleteModal.hide();
+        }
+    });
+
+    // Start polling
+    function startPolling() {
+        loadMessages();
+        pollInterval = setInterval(loadMessages, 60000);
+    }
+
+    function stopPolling() {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+        }
+    }
+
+    // Initialize
+    startPolling();
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', stopPolling);
+});
+</script>
+{% endblock %} 

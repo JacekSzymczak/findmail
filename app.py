@@ -1,12 +1,14 @@
 import os
 
 from dotenv import dotenv_values
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 
 from api.auth import auth_bp
 from api.invitation_keys import invitation_keys_bp
 from api.mailboxes import mailboxes_bp
+from api.main import main_bp
 from api.messages import messages_bp
+from api.views import views_bp
 from extensions import (
     exempt_blueprints,
     init_extensions,
@@ -97,7 +99,9 @@ def create_app(database_uri=None):
     # Initialize extensions
     init_extensions(app)
 
-    # Register API blueprints
+    # Register blueprints
+    app.register_blueprint(main_bp)  # Register main blueprint first
+    app.register_blueprint(views_bp)  # Register views blueprint
     app.register_blueprint(invitation_keys_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(mailboxes_bp)
@@ -111,7 +115,16 @@ def create_app(database_uri=None):
     def load_user(user_id):
         return AuthService.get_user_by_id(int(user_id))
 
-    # Centralized error handler
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return render_template("404.html"), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        return render_template("500.html"), 500
+
+    # Centralized error handler for API endpoints
     @app.errorhandler(Exception)
     def handle_unexpected_error(e):
         app.logger.error(f"Unhandled exception: {e}")
