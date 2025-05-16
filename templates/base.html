@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}FindMail{% endblock %}</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}?n=3" rel="stylesheet">
     
     <style>
         .nav-link {
@@ -49,7 +52,9 @@
     </div>
 
     <!-- Main Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light" style="border-bottom: 1px solid rgb(224, 176, 175);">
+
+    <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #fff; border-bottom: 1px solid rgb(224, 176, 175); color-scheme: light;">
+
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main_bp.index') }}">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" alt="FindMail Logo" height="80" class="d-inline-block align-text-top">

@@ -3,7 +3,8 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background-color: #f8f9fa;
+
+    background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 100%);
 }
 
 main {
@@ -82,7 +83,7 @@ main {
 
 .table th {
     border-top: none;
-    background-color: #f8f9fa;
+    background-color: #fff;
 }
 
 .table-hover tbody tr {

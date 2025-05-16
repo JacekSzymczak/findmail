@@ -205,25 +205,47 @@ class MessageService:
                     subject += part
 
             body = ""
+            html_body = ""
             if msg.is_multipart():
                 for p in msg.walk():
-                    if p.get_content_type() == "text/plain":
+                    content_type = p.get_content_type()
+                    if content_type == "text/plain":
                         try:
                             body = p.get_payload(decode=True).decode(
                                 p.get_content_charset() or "utf-8", errors="replace"
                             )
-                            break
                         except Exception as e:
-                            current_app.logger.warning(f"Error decoding body part: {e}")
+                            current_app.logger.warning(
+                                f"Error decoding plain text body part: {e}"
+                            )
                             body = "Error decoding content"
+                    elif content_type == "text/html":
+                        try:
+                            html_body = p.get_payload(decode=True).decode(
+                                p.get_content_charset() or "utf-8", errors="replace"
+                            )
+                        except Exception as e:
+                            current_app.logger.warning(
+                                f"Error decoding HTML body part: {e}"
+                            )
+                            html_body = "Error decoding content"
             else:
+                content_type = msg.get_content_type()
                 try:
-                    body = msg.get_payload(decode=True).decode(
-                        msg.get_content_charset() or "utf-8", errors="replace"
-                    )
+                    if content_type == "text/html":
+                        html_body = msg.get_payload(decode=True).decode(
+                            msg.get_content_charset() or "utf-8", errors="replace"
+                        )
+                    else:
+                        body = msg.get_payload(decode=True).decode(
+                            msg.get_content_charset() or "utf-8", errors="replace"
+                        )
                 except Exception as e:
                     current_app.logger.warning(f"Error decoding body: {e}")
-                    body = "Error decoding content"
+                    if content_type == "text/html":
+                        html_body = "Error decoding content"
+                    else:
+                        body = "Error decoding content"
 
             # Parse date with error handling
             received_at = None
@@ -243,6 +265,8 @@ class MessageService:
                 "sender": msg.get("From"),
                 "subject": subject,
                 "body": body,
+                "html_body": html_body,
+                "is_html": bool(html_body),
             }
 
             imap.close()
