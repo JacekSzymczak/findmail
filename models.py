@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from functools import wraps
 
 from flask import abort
@@ -19,7 +19,7 @@ class User(UserMixin, db.Model):
     id = Column(Integer, primary_key=True)
     email = Column(String(120), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
-    created_at = Column(db.DateTime, default=lambda: datetime.now(UTC))
+    created_at = Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_admin = Column(Boolean, default=False)
 
 
