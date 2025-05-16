@@ -137,7 +137,8 @@ def create_app(database_uri=None, testing=False):
 
 
 # Create application instance for Flask CLI
-app = create_app()
+
 
 if __name__ == "__main__":
+    app = create_app()
     app.run(debug=True, host="0.0.0.0", port=8080)
