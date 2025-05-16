@@ -71,30 +71,96 @@ class MessageService:
                     else:
                         subject += part
 
-                # get plain-text body
+                # get plain-text and HTML body
                 body = ""
+                html_body = ""
+                embedded_images = {}  # Store CID -> base64 image mappings
+
                 if msg.is_multipart():
+                    # First pass: collect all embedded images
                     for p in msg.walk():
-                        if p.get_content_type() == "text/plain":
-                            body = p.get_payload(decode=True).decode(
-                                p.get_content_charset() or "utf-8", errors="replace"
-                            )
-                            break
+                        if p.get_content_maintype() == "image":
+                            content_id = p.get("Content-ID", "").strip("<>")
+                            if content_id:
+                                try:
+                                    image_data = p.get_payload(decode=True)
+                                    if image_data:
+                                        # Convert to base64 for embedding
+                                        image_b64 = base64.b64encode(image_data).decode(
+                                            "ascii"
+                                        )
+                                        embedded_images[content_id] = {
+                                            "data": f"data:{p.get_content_type()};base64,{image_b64}",
+                                            "content_type": p.get_content_type(),
+                                        }
+                                except Exception as e:
+                                    current_app.logger.warning(
+                                        f"Error processing embedded image: {e}"
+                                    )
+
+                    # Second pass: process text content
+                    for p in msg.walk():
+                        content_type = p.get_content_type()
+                        if content_type == "text/plain":
+                            try:
+                                body = p.get_payload(decode=True).decode(
+                                    p.get_content_charset() or "utf-8", errors="replace"
+                                )
+                            except Exception as e:
+                                current_app.logger.warning(
+                                    f"Error decoding plain text body part: {e}"
+                                )
+                                body = "Error decoding content"
+                        elif content_type == "text/html":
+                            try:
+                                html_body = p.get_payload(decode=True).decode(
+                                    p.get_content_charset() or "utf-8", errors="replace"
+                                )
+                            except Exception as e:
+                                current_app.logger.warning(
+                                    f"Error decoding HTML body part: {e}"
+                                )
+                                html_body = "Error decoding content"
                 else:
-                    body = msg.get_payload(decode=True).decode(
-                        msg.get_content_charset() or "utf-8", errors="replace"
-                    )
+                    content_type = msg.get_content_type()
+                    try:
+                        if content_type == "text/html":
+                            html_body = msg.get_payload(decode=True).decode(
+                                msg.get_content_charset() or "utf-8", errors="replace"
+                            )
+                        else:
+                            body = msg.get_payload(decode=True).decode(
+                                msg.get_content_charset() or "utf-8", errors="replace"
+                            )
+                    except Exception as e:
+                        current_app.logger.warning(f"Error decoding body: {e}")
+                        if content_type == "text/html":
+                            html_body = "Error decoding content"
+                        else:
+                            body = "Error decoding content"
+
+                # Parse date with error handling
+                received_at = None
+                try:
+                    date_str = msg.get("Date")
+                    if date_str:
+                        received_at = datetime.strptime(
+                            date_str, "%a, %d %b %Y %H:%M:%S %z"
+                        )
+                except Exception as e:
+                    current_app.logger.warning(f"Error parsing date: {e}")
 
                 msgs.append(
                     {
                         "id": safe_id,
                         "imap_id": num.decode(),
-                        "received_at": datetime.strptime(
-                            msg["Date"], "%a, %d %b %Y %H:%M:%S %z"
-                        ),
+                        "received_at": received_at,
                         "sender": msg.get("From"),
                         "subject": subject,
                         "body": body,
+                        "html_body": html_body,
+                        "is_html": bool(html_body),
+                        "embedded_images": embedded_images,
                     }
                 )
 

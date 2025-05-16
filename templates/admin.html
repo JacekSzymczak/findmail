@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - FindMail{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Panel Administracyjny</h1>
+    
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Klucze Zaproszeń</h5>
+            <button type="button" class="btn btn-primary" id="createInviteKey">
+                <i class="bi bi-plus-circle"></i> Nowy Klucz
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Klucz</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inviteKeysTable">
+                        {% for key in invite_keys %}
+                        <tr>
+                            <td>{{ key.key }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-default" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-gear"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item delete-key" href="#" data-key="{{ key.key }}">
+                                                <i class="bi bi-trash"></i> Usuń klucz
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createInviteKeyBtn = document.getElementById('createInviteKey');
+    
+    createInviteKeyBtn.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/invitation-keys', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                location.reload();
+            } else {
+                throw new Error('Failed to create invite key');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Wystąpił błąd podczas tworzenia klucza zaproszenia');
+        }
+    });
+
+    // Delete key functionality
+    document.querySelectorAll('.delete-key').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const key = this.dataset.key;
+            try {
+                const response = await fetch(`/api/invitation-keys/${key}`, {
+                    method: 'DELETE',
+                });
+                
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    throw new Error('Failed to delete invite key');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Wystąpił błąd podczas usuwania klucza');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

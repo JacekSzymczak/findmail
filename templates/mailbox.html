@@ -8,15 +8,20 @@
     <div class="col-md-8">
         <div class="gradient-accent2 rounded-top-4 mb-0" style="height: 4px;"></div>
         <div class="card mb-4 shadow-lg rounded-4 border-0" style="background-color: #fff; border-top-left-radius: 0 !important;border-top-right-radius: 0 !important;">
-            <div class="card-header "><strong>Podaj nazwę skrzynki mailowej do wyszukania</strong></div>
+            <div class="card-header "><strong>Podaj nazwę skrzynki mailowej do wyszukania w domenie @findmail.pl</strong></div>
             <div class="card-body p-4 mt-4">
                 <div class="mt-2"></div>
                 <form id="mailboxForm" method="GET">
                     <div class="mb-3">
                         <div class="input-group input-group">
-                            <input type="text" class="form-control form-control-lg rounded-start-3" id="mailbox_name" name="name" 
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="mailboxConfigDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 8px 0 0 8px;">
+                                <i class="bi bi-gear"></i>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="mailboxConfigDropdown">
+                                <li><a class="dropdown-item" href="#" id="generateRandomMailbox"><i class="bi bi-shuffle"></i> Wygeneruj losowy adres</a></li>
+                            </ul>
+                            <input type="text" class="form-control form-control-lg" id="mailbox_name" name="name" 
                                    pattern="[A-Za-z0-9._%+\-]{1,20}" maxlength="20" required
-                                  
                                    aria-describedby="mailboxHelp">
                             <button type="submit" class="btn btn-primary btn-lg rounded-end-3" id="submitBtn">
                                 <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
@@ -119,6 +124,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailModal = new bootstrap.Modal(document.getElementById('emailModal'));
 
     let currentMailbox = '';
+    let pollInterval = null;  // Add polling interval variable
+
+    // Add polling functions
+    function startPolling() {
+        if (currentMailbox) {
+            // Clear any existing interval first
+            stopPolling();
+            // Start new polling
+            pollInterval = setInterval(() => {
+                fetchMessages(currentMailbox);
+            }, 60000);  // 60 seconds
+        }
+    }
+
+    function stopPolling() {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+    }
 
     // Autofocus the input on page load
     nameInput.focus();
@@ -142,6 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         currentMailbox = nameInput.value;
         await fetchMessages(currentMailbox);
+        startPolling();  // Start polling after successful fetch
     });
 
     // Refresh button click
@@ -150,6 +176,33 @@ document.addEventListener('DOMContentLoaded', function() {
             await fetchMessages(currentMailbox);
         }
     });
+
+    // Add cleanup on page unload
+    window.addEventListener('beforeunload', stopPolling);
+
+    // Random mailbox generation function
+    function generateRandomString(length) {
+        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+
+    // Add event listener for random mailbox generation
+    const generateRandomMailboxBtn = document.getElementById('generateRandomMailbox');
+    if (generateRandomMailboxBtn) {
+        generateRandomMailboxBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const randomString = generateRandomString(20);
+            const mailboxInput = document.getElementById('mailbox_name');
+            mailboxInput.value = randomString;
+            
+            // Trigger form submission
+            form.dispatchEvent(new Event('submit'));
+        });
+    }
 
     async function fetchMessages(mailboxName) {
         showLoading();
@@ -247,9 +300,121 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalDate').textContent = new Date(message.received_at).toLocaleString('pl-PL');
         document.getElementById('modalSubject').textContent = message.subject || '(Brak tematu)';
         
-        // Tutaj możesz dodać kod do pobrania pełnej treści maila
         const iframe = document.getElementById('emailBody');
-        iframe.srcdoc = message.body || 'Brak treści';
+        if (message.is_html && message.html_body) {
+            let htmlContent = message.html_body;
+            
+            // Pre-process HTML content to replace CID references
+            if (message.embedded_images) {
+                // Create a DOMParser to properly parse the HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlContent, 'text/html');
+                
+                // Function to extract CID from a string
+                const extractCid = (str) => {
+                    const match = str.match(/cid:(.+?)(?:@|$)/);
+                    return match ? match[1] : null;
+                };
+
+                // Function to find matching image data
+                const findImageData = (cid) => {
+                    if (!cid) return null;
+                    return message.embedded_images[cid] || 
+                           message.embedded_images[`${cid}@`] ||
+                           Object.entries(message.embedded_images).find(([key]) => 
+                               key.startsWith(cid) || cid.startsWith(key)
+                           )?.[1];
+                };
+
+                // Process all img tags
+                const imgTags = doc.getElementsByTagName('img');
+                for (let img of Array.from(imgTags)) {
+                    const src = img.getAttribute('src');
+                    if (src && src.startsWith('cid:')) {
+                        const cid = extractCid(src);
+                        const imageData = findImageData(cid);
+                        
+                        if (imageData) {
+                            img.setAttribute('src', imageData.data);
+                        } else {
+                            img.parentNode.removeChild(img);
+                        }
+                    }
+                }
+
+                // Process all elements with background images
+                const allElements = doc.getElementsByTagName('*');
+                for (let element of Array.from(allElements)) {
+                    const style = element.getAttribute('style');
+                    if (style && style.includes('cid:')) {
+                        const cid = extractCid(style);
+                        const imageData = findImageData(cid);
+                        
+                        if (imageData) {
+                            element.setAttribute('style', 
+                                style.replace(/url\(['"]?cid:[^'"]+['"]?\)/g, 
+                                `url("${imageData.data}")`));
+                        } else {
+                            element.setAttribute('style', 
+                                style.replace(/url\(['"]?cid:[^'"]+['"]?\)/g, ''));
+                        }
+                    }
+                }
+
+                // Process any remaining CID references in the HTML
+                htmlContent = doc.body.innerHTML.replace(
+                    /cid:[^"'\s>]+/g, 
+                    (match) => {
+                        const cid = extractCid(match);
+                        const imageData = findImageData(cid);
+                        return imageData ? imageData.data : '';
+                    }
+                );
+            }
+            
+            // Add some basic styling to ensure images display properly
+            const styledHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 16px;
+                            line-height: 1.5;
+                        }
+                        img {
+                            max-width: 100%;
+                            height: auto;
+                            display: inline-block;
+                        }
+                        table {
+                            border-collapse: collapse;
+                            width: 100%;
+                        }
+                        td, th {
+                            border: 1px solid #ddd;
+                            padding: 8px;
+                        }
+                        /* Hide any remaining CID references */
+                        [src^="cid:"], [style*="cid:"] {
+                            display: none !important;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${htmlContent}
+                </body>
+                </html>
+            `;
+            
+            // Set the processed HTML to the iframe
+            iframe.srcdoc = styledHtml;
+        } else {
+            iframe.srcdoc = `<pre style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit;">${message.body || 'Brak treści'}</pre>`;
+        }
         
         emailModal.show();
     }
