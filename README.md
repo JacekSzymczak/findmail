@@ -16,12 +16,15 @@
 
 ## Project Description
 
-FindMail is an MVP webmail client for the `@findmail.pl` domain.  
-It enables users to register (with a one-time invitation key), log in, generate or access shared mailboxes (max 20-character, email-safe names), and perform basic email operations:  
-- List messages (with automatic 60 s polling or manual refresh)  
+FindMail is an MVP email webmail client for the `@findmail.pl` domain. 
+It allows users to view any mail box from @findmail.pl without prior reservation. It uses catch-all functionality for domain.
+
+Users can register (with a one-time invitation key), log in, generate or access shared mailboxes and perform basic email operations:  
+- List messages for given mail box (with automatic 60s polling or manual refresh)  
 - Preview message content (HTML/TXT) in a sandboxed `iframe` (all `<script>` tags stripped)  
 - Permanently delete messages (with confirmation)  
 - Centralized error handling with user-friendly messages  
+- Generate random mail box name for security reasons
 
 ---
 
