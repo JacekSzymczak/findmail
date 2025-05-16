@@ -11,7 +11,7 @@ load_dotenv()
 @pytest.fixture(scope="session")
 def app():
     """Session-wide test 'Flask' application."""
-    app = create_app(database_uri="sqlite:///:memory:")
+    app = create_app(database_uri="sqlite:///:memory:", testing=True)
     app.config["TESTING"] = True
     app.config["SECRET_KEY"] = "test-secret-key"
     app.config["RATELIMIT_ENABLED"] = False

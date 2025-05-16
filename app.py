@@ -17,52 +17,8 @@ from extensions import (
 from services.auth_service import AuthService
 
 
-def create_app(database_uri=None):
+def create_app(database_uri=None, testing=False):
     app = Flask(__name__)
-
-    # Load environment variables ONLY from .env file
-    env_path = os.path.join(os.path.dirname(__file__), ".env")
-    env_config = dotenv_values(env_path)
-
-    # Set secret key from environment or generate a secure one
-    app.secret_key = env_config.get("SECRET_KEY") or os.urandom(24)
-
-    # Securely load database configuration from .env file
-    db_config = {
-        "user": env_config.get("DB_USER"),
-        "password": env_config.get("DB_PASSWORD"),
-        "host": env_config.get("DB_HOST", "localhost"),
-        "port": env_config.get("DB_PORT", "3306"),
-        "database": env_config.get("DB_NAME"),
-    }
-
-    # Validate required database configuration
-    required_keys = ["user", "password", "host", "database"]
-    missing_keys = [key for key in required_keys if not db_config[key]]
-
-    if missing_keys:
-        raise ValueError(
-            f"Missing required database configuration: {', '.join(missing_keys)}"
-        )
-
-    # Construct database URI
-    database_uri = database_uri or env_config.get(
-        "DATABASE_URL",
-        f"mysql+pymysql://{db_config['user']}:{db_config['password']}"
-        f"@{db_config['host']}:{db_config['port']}/{db_config['database']}",
-    )
-
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-    # Load IMAP configuration
-    app.config["IMAP_HOST"] = env_config.get("IMAP_HOST")
-    app.config["IMAP_PORT"] = int(env_config.get("IMAP_PORT", "993"))
-    app.config["IMAP_USER"] = env_config.get("IMAP_USER")
-    app.config["IMAP_PASSWORD"] = env_config.get("IMAP_PASSWORD")
-    app.config["IMAP_USE_SSL"] = (
-        env_config.get("IMAP_USE_SSL", "true").lower() == "true"
-    )
 
     # Configure logging
     import logging
@@ -70,33 +26,80 @@ def create_app(database_uri=None):
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__name__)
 
-    # Test database connection
-    try:
-        from sqlalchemy import create_engine, text
-        from sqlalchemy.exc import OperationalError, SQLAlchemyError
+    if testing == False:
+        # Load environment variables ONLY from .env file
+        env_path = os.path.join(os.path.dirname(__file__), ".env")
+        env_config = dotenv_values(env_path)
 
-        # Create SQLAlchemy engine
-        engine = create_engine(database_uri)
+        # Set secret key from environment or generate a secure one
+        app.secret_key = env_config.get("SECRET_KEY") or os.urandom(24)
 
-        # Attempt to connect to the database
-        with engine.connect() as connection:
-            # Use text() to create a proper executable SQL statement
-            result = connection.execute(text("SELECT 1"))
-            # Fetch the result to ensure the query works
-            result.fetchone()
-            logger.info("Successfully connected to database")
+        # Securely load database configuration from .env file
+        db_config = {
+            "user": env_config.get("DB_USER"),
+            "password": env_config.get("DB_PASSWORD"),
+            "host": env_config.get("DB_HOST", "localhost"),
+            "port": env_config.get("DB_PORT", "3306"),
+            "database": env_config.get("DB_NAME"),
+        }
 
-    except OperationalError as oe:
-        logger.error(f"Database connection error: {oe}")
-        raise
-    except SQLAlchemyError as se:
-        logger.error(f"SQLAlchemy error during database connection: {se}")
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected error connecting to database: {e}")
-        raise
+        # Validate required database configuration
+        required_keys = ["user", "password", "host", "database"]
+        missing_keys = [key for key in required_keys if not db_config[key]]
 
-    # Initialize extensions
+        if missing_keys:
+            raise ValueError(
+                f"Missing required database configuration: {', '.join(missing_keys)}"
+            )
+
+        # Construct database URI
+        database_uri = database_uri or env_config.get(
+            "DATABASE_URL",
+            f"mysql+pymysql://{db_config['user']}:{db_config['password']}"
+            f"@{db_config['host']}:{db_config['port']}/{db_config['database']}",
+        )
+
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
+        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+        # Load IMAP configuration
+        app.config["IMAP_HOST"] = env_config.get("IMAP_HOST")
+        app.config["IMAP_PORT"] = int(env_config.get("IMAP_PORT", "993"))
+        app.config["IMAP_USER"] = env_config.get("IMAP_USER")
+        app.config["IMAP_PASSWORD"] = env_config.get("IMAP_PASSWORD")
+        app.config["IMAP_USE_SSL"] = (
+            env_config.get("IMAP_USE_SSL", "true").lower() == "true"
+        )
+
+        # Test database connection
+        try:
+            from sqlalchemy import create_engine, text
+            from sqlalchemy.exc import OperationalError, SQLAlchemyError
+
+            # Create SQLAlchemy engine
+            engine = create_engine(database_uri)
+
+            # Attempt to connect to the database
+            with engine.connect() as connection:
+                # Use text() to create a proper executable SQL statement
+                result = connection.execute(text("SELECT 1"))
+                # Fetch the result to ensure the query works
+                result.fetchone()
+                logger.info("Successfully connected to database")
+
+        except OperationalError as oe:
+            logger.error(f"Database connection error: {oe}")
+            raise
+        except SQLAlchemyError as se:
+            logger.error(f"SQLAlchemy error during database connection: {se}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error connecting to database: {e}")
+            raise
+    else:
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
+        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+        # Initialize extensions
     init_extensions(app)
 
     # Register blueprints
